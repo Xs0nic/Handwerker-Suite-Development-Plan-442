@@ -1,30 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
+import GlobalChat from '../chat/GlobalChat';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { 
-  FiHome, 
-  FiClipboard, 
-  FiCalculator, 
-  FiSettings, 
-  FiX, 
-  FiFolder, 
-  FiMessageSquare, 
-  FiCalendar,
-  FiUsers,
-  FiBriefcase,
-  FiUser
-} = FiIcons;
+const { FiHome, FiClipboard, FiCalculator, FiSettings, FiX, FiFolder, FiMessageSquare, FiCalendar, FiUsers, FiBriefcase, FiUser } = FiIcons;
 
 const Sidebar = ({ isOpen, onClose, isMobile }) => {
   const location = useLocation();
   const { id: projectId } = useParams();
   const { getUnreadCount, getLastMessage } = useChat();
   const { hasPermission, currentUser } = useAuth();
+  const [showGlobalChat, setShowGlobalChat] = useState(false);
 
   // Hauptmenüpunkte
   const mainMenuItems = [
@@ -38,7 +28,8 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
     { path: `/project/${projectId}/measurement`, icon: FiClipboard, label: 'Aufmaß', permission: { module: 'measurements', action: 'view' } },
     { path: `/project/${projectId}/calculation`, icon: FiCalculator, label: 'Kalkulation', permission: { module: 'calculations', action: 'view' } },
     { path: `/project/${projectId}/plan`, icon: FiCalendar, label: 'Projektplan', permission: { module: 'plans', action: 'view' } },
-    { path: `/project/${projectId}/chat`, icon: FiMessageSquare, label: 'Chat', badge: getUnreadCount(projectId, localStorage.getItem(`meister-chat-lastread-${projectId}`)), permission: { module: 'chat', action: 'view' } }
+    { path: `/project/${projectId}/chat`, icon: FiMessageSquare, label: 'Chat', badge: getUnreadCount(projectId, localStorage.getItem(`meister-chat-lastread-${projectId}`)), permission: { module: 'chat', action: 'view' } },
+    { path: `/project/${projectId}/files`, icon: FiFolder, label: 'Dateiablage', permission: { module: 'files', action: 'view' } }
   ] : [];
 
   // Einstellungen und Verwaltung
@@ -96,11 +87,13 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className={`
               ${isMobile ? 'fixed' : 'fixed'} 
-              top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50
-              ${isMobile ? 'shadow-xl' : ''}
+              top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 
+              ${isMobile ? 'shadow-xl' : ''} 
+              overflow-y-auto
             `}
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
               <Link to="/projects" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">MS</span>
@@ -117,7 +110,7 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
               )}
             </div>
 
-            <div className="p-2">
+            <div className="p-2 pb-20">
               {/* Benutzerinfo */}
               {currentUser && (
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
@@ -135,6 +128,19 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                 </div>
               )}
 
+              {/* Global Chat Button */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowGlobalChat(true)}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-green-100 text-green-800 hover:bg-green-200 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <SafeIcon icon={FiMessageSquare} className="w-5 h-5 text-green-700" />
+                    <span className="font-medium">Firmen-Chat</span>
+                  </div>
+                </button>
+              </div>
+
               {/* Hauptnavigation */}
               <div className="mb-4">
                 <div className="px-3 py-2">
@@ -150,7 +156,10 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                       onClick={isMobile ? onClose : undefined}
                       className={`
                         flex items-center justify-between px-3 py-2 rounded-lg transition-colors
-                        ${location.pathname === item.path ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}
+                        ${location.pathname === item.path 
+                          ? 'bg-blue-50 text-blue-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
                       `}
                     >
                       <div className="flex items-center space-x-3">
@@ -186,7 +195,10 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                         onClick={isMobile ? onClose : undefined}
                         className={`
                           flex items-center justify-between px-3 py-2 rounded-lg transition-colors
-                          ${location.pathname === item.path ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}
+                          ${location.pathname === item.path 
+                            ? 'bg-blue-50 text-blue-700' 
+                            : 'text-gray-700 hover:bg-gray-100'
+                          }
                         `}
                       >
                         <div className="flex items-center space-x-3">
@@ -222,7 +234,10 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                       onClick={isMobile ? onClose : undefined}
                       className={`
                         flex items-center justify-between px-3 py-2 rounded-lg transition-colors
-                        ${location.pathname === item.path ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}
+                        ${location.pathname === item.path 
+                          ? 'bg-blue-50 text-blue-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
                       `}
                     >
                       <div className="flex items-center space-x-3">
@@ -238,7 +253,7 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
               </div>
             </div>
 
-            {/* Chat Preview für aktuelles Projekt */}
+            {/* Chat Preview für aktuelles Projekt - Fixed Position */}
             {projectId && (
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -260,6 +275,9 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                 </div>
               </div>
             )}
+
+            {/* Global Chat Component */}
+            <GlobalChat isOpen={showGlobalChat} onClose={() => setShowGlobalChat(false)} />
           </motion.aside>
         </>
       )}

@@ -44,7 +44,7 @@ const Calculator = ({ onResult, onClose }) => {
         try {
           const result = evaluateExpression(calculation);
           setDisplay(result.toString());
-          setHistory(prev => [...prev, `${calculation} = ${result}`]);
+          setHistory(prev => [...prev, `${calculation}=${result}`]);
         } catch (error) {
           setDisplay('Fehler');
         }
@@ -113,15 +113,15 @@ const Calculator = ({ onResult, onClose }) => {
     const jsExpression = expression
       .replace(/×/g, '*')
       .replace(/÷/g, '/')
-      .replace(/--/g, '+'); // Handle double minus
-
+      .replace(/--/g, '+');
+    
     // Basic safety check
     if (!/^[0-9+\-*/.() ]+$/.test(jsExpression)) {
       throw new Error('Invalid expression');
     }
 
     try {
-      const result = Function(`"use strict"; return (${jsExpression})`)();
+      const result = Function(`"use strict";return (${jsExpression})`)();
       return Math.round(result * 100) / 100; // Round to 2 decimal places
     } catch (error) {
       throw new Error('Invalid expression');
@@ -145,40 +145,39 @@ const Calculator = ({ onResult, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] p-4 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-lg shadow-xl w-full max-w-md"
+        className="bg-white rounded-lg shadow-xl w-[95%] max-w-[320px] sm:max-w-md max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Taschenrechner</h2>
-          <button
-            onClick={onClose}
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Taschenrechner</h2>
+          <button 
+            onClick={onClose} 
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
             <SafeIcon icon={FiX} className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Display */}
-          <div className="mb-4">
-            <div className="bg-gray-50 p-3 rounded-lg border">
-              <div className="text-sm text-gray-600 mb-1 h-5">
+          <div className="mb-3 sm:mb-4">
+            <div className="bg-gray-50 p-2 sm:p-3 rounded-lg border">
+              <div className="text-sm text-gray-600 mb-1 h-5 overflow-x-auto whitespace-nowrap">
                 {calculation || ' '}
               </div>
-              <div className="text-2xl font-mono text-right text-gray-900">
+              <div className="text-xl sm:text-2xl font-mono text-right text-gray-900 overflow-x-auto whitespace-nowrap">
                 {display}
               </div>
             </div>
           </div>
 
-          {/* Memory and History */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Memory and History - Hidden on very small screens */}
+          <div className="hidden xs:grid grid-cols-2 gap-2 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <h4 className="text-xs font-medium text-gray-500 mb-2">SPEICHER</h4>
-              <div className="bg-gray-50 p-2 rounded text-xs h-16 overflow-y-auto">
+              <h4 className="text-xs font-medium text-gray-500 mb-1 sm:mb-2">SPEICHER</h4>
+              <div className="bg-gray-50 p-2 rounded text-xs h-12 sm:h-16 overflow-y-auto">
                 {memory.length > 0 ? (
                   memory.map((value, index) => (
                     <div key={index}>{value}</div>
@@ -189,8 +188,8 @@ const Calculator = ({ onResult, onClose }) => {
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-medium text-gray-500 mb-2">VERLAUF</h4>
-              <div className="bg-gray-50 p-2 rounded text-xs h-16 overflow-y-auto">
+              <h4 className="text-xs font-medium text-gray-500 mb-1 sm:mb-2">VERLAUF</h4>
+              <div className="bg-gray-50 p-2 rounded text-xs h-12 sm:h-16 overflow-y-auto">
                 {history.length > 0 ? (
                   history.slice(-3).map((entry, index) => (
                     <div key={index} className="mb-1">{entry}</div>
@@ -202,21 +201,21 @@ const Calculator = ({ onResult, onClose }) => {
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="grid grid-cols-4 gap-2">
-            {buttons.flat().map((button, index) => (
-              <button
-                key={index}
-                onClick={() => handleButtonClick(button)}
-                className={`
-                  p-3 rounded-lg font-medium transition-colors text-sm
-                  ${getButtonStyle(button)}
-                  ${button === '0' ? 'col-span-1' : ''}
-                  ${button === 'OK' ? 'col-span-2' : ''}
-                `}
-              >
-                {button === '←' ? <SafeIcon icon={FiRotateCcw} className="w-4 h-4 mx-auto" /> : button}
-              </button>
+          {/* Buttons - Responsive grid */}
+          <div className="grid grid-cols-4 gap-1 sm:gap-2">
+            {buttons.map((row, rowIndex) => (
+              row.map((button, colIndex) => (
+                <button
+                  key={`${rowIndex}-${colIndex}`}
+                  onClick={() => handleButtonClick(button)}
+                  className={`
+                    p-2 sm:p-3 rounded-lg font-medium transition-colors text-xs sm:text-sm
+                    ${getButtonStyle(button)}
+                  `}
+                >
+                  {button === '←' ? <SafeIcon icon={FiRotateCcw} className="w-3 h-3 sm:w-4 sm:h-4 mx-auto" /> : button}
+                </button>
+              ))
             ))}
           </div>
         </div>

@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
@@ -46,6 +49,18 @@ export default {
           800: '#9a3412',
           900: '#7c2d12',
         },
+        indigo: {
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -60,6 +75,10 @@ export default {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
       },
     },
   },
@@ -79,6 +98,8 @@ export default {
     'bg-yellow-200',
     'bg-gray-100',
     'bg-gray-200',
+    'bg-indigo-100',
+    'bg-indigo-200',
     'text-blue-600',
     'text-green-600',
     'text-purple-600',
@@ -86,6 +107,7 @@ export default {
     'text-red-600',
     'text-yellow-600',
     'text-gray-600',
+    'text-indigo-600',
     'text-blue-800',
     'text-green-800',
     'text-purple-800',
@@ -93,10 +115,17 @@ export default {
     'text-red-800',
     'text-yellow-800',
     'text-gray-800',
+    'text-indigo-800',
     'hover:bg-blue-200',
     'hover:bg-green-200',
     'hover:bg-purple-200',
     'hover:bg-orange-200',
+    'hover:bg-indigo-200',
     'line-clamp-2',
+    'min-w-0',
+    'truncate',
+    'grid-cols-[120px_repeat(11,1fr)]',
+    'grid-cols-[200px_repeat(23,1fr)]',
+    'grid-cols-[100px_repeat(7,1fr)]',
   ]
 }

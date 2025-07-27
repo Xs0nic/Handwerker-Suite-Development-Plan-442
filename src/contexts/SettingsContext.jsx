@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const SettingsContext = createContext();
 
@@ -10,216 +11,179 @@ export const useSettings = () => {
   return context;
 };
 
-const defaultTrades = [
-  { id: '1', name: 'Verputzen', unit: 'm²' },
-  { id: '2', name: 'Fliesen legen', unit: 'm²' },
-  { id: '3', name: 'Malen', unit: 'm²' },
-  { id: '4', name: 'Silikonfuge', unit: 'mtr' },
-  { id: '5', name: 'Grundieren', unit: 'm²' }
-];
-
-const defaultUnits = [
-  { id: '1', name: 'm²', type: 'area' },
-  { id: '2', name: 'mtr', type: 'length' },
-  { id: '3', name: 'Stück', type: 'piece' },
-  { id: '4', name: 'kg', type: 'weight' },
-  { id: '5', name: 'Stunde', type: 'time' }
-];
-
-const defaultRooms = [
-  { id: '1', name: 'Wohnzimmer' },
-  { id: '2', name: 'Küche' },
-  { id: '3', name: 'Bad' },
-  { id: '4', name: 'Schlafzimmer' },
-  { id: '5', name: 'Flur' }
-];
-
-const defaultFloors = [
-  { id: '1', name: 'Erdgeschoss' },
-  { id: '2', name: '1. Obergeschoss' },
-  { id: '3', name: 'Keller' },
-  { id: '4', name: 'Dachgeschoss' }
-];
-
-const defaultMaterials = [
-  {
-    id: '1',
-    name: 'Knauf Rotband Putz',
-    unit: 'kg',
-    packageSize: 30,
-    calculationType: 'area',
-    consumption: 10,
-    consumptionUnit: 'kg/m²'
-  },
-  {
-    id: '2',
-    name: 'PCI Tiefengrund',
-    unit: 'l',
-    packageSize: 10,
-    calculationType: 'area',
-    consumption: 0.15,
-    consumptionUnit: 'l/m²'
-  }
-];
-
-const defaultEmployees = [
-  {
-    id: '1',
-    name: 'Max Mustermann',
-    role: 'Fliesenleger',
-    email: 'max@beispiel.de',
-    phone: '+49 123 456789'
-  },
-  {
-    id: '2',
-    name: 'Anna Schmidt',
-    role: 'Malerin',
-    email: 'anna@beispiel.de',
-    phone: '+49 987 654321'
-  }
-];
-
 export const SettingsProvider = ({ children }) => {
-  const [trades, setTrades] = useState(defaultTrades);
-  const [units, setUnits] = useState(defaultUnits);
-  const [rooms, setRooms] = useState(defaultRooms);
-  const [floors, setFloors] = useState(defaultFloors);
-  const [materials, setMaterials] = useState(defaultMaterials);
-  const [employees, setEmployees] = useState(defaultEmployees);
+  const [trades, setTrades] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [floors, setFloors] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const { currentUser, currentCompany } = useAuth();
 
+  // Initialize with demo data
   useEffect(() => {
-    const savedTrades = localStorage.getItem('meister-trades');
-    const savedUnits = localStorage.getItem('meister-units');
-    const savedRooms = localStorage.getItem('meister-rooms');
-    const savedFloors = localStorage.getItem('meister-floors');
-    const savedMaterials = localStorage.getItem('meister-materials');
-    const savedEmployees = localStorage.getItem('meister-employees');
+    if (currentUser && currentCompany) {
+      // Default trades
+      const defaultTrades = [
+        { id: 'trade-1', name: 'Malerarbeiten', unit: 'm²', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'trade-2', name: 'Fliesenarbeiten', unit: 'm²', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'trade-3', name: 'Bodenbeläge', unit: 'm²', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'trade-4', name: 'Elektroarbeiten', unit: 'Stk', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'trade-5', name: 'Sanitärarbeiten', unit: 'Stk', company_id: currentCompany.id, created_at: new Date().toISOString() }
+      ];
+      
+      // Default units
+      const defaultUnits = [
+        { id: 'unit-1', name: 'm²', type: 'area', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'unit-2', name: 'mtr', type: 'length', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'unit-3', name: 'Stk', type: 'piece', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'unit-4', name: 'kg', type: 'weight', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'unit-5', name: 'l', type: 'volume', company_id: currentCompany.id, created_at: new Date().toISOString() }
+      ];
+      
+      // Default rooms
+      const defaultRooms = [
+        { id: 'room-1', name: 'Wohnzimmer', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'room-2', name: 'Küche', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'room-3', name: 'Badezimmer', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'room-4', name: 'Schlafzimmer', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'room-5', name: 'Flur', company_id: currentCompany.id, created_at: new Date().toISOString() }
+      ];
+      
+      // Default floors
+      const defaultFloors = [
+        { id: 'floor-1', name: 'Keller', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'floor-2', name: 'Erdgeschoss', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'floor-3', name: '1. OG', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'floor-4', name: '2. OG', company_id: currentCompany.id, created_at: new Date().toISOString() },
+        { id: 'floor-5', name: 'Dachgeschoss', company_id: currentCompany.id, created_at: new Date().toISOString() }
+      ];
+      
+      // Default materials
+      const defaultMaterials = [
+        { 
+          id: 'material-1', 
+          name: 'Wandfarbe weiß', 
+          unit: 'l', 
+          packageSize: 10, 
+          calculationType: 'area', 
+          consumption: 0.25, 
+          consumptionUnit: 'l/m²', 
+          company_id: currentCompany.id, 
+          created_at: new Date().toISOString() 
+        },
+        { 
+          id: 'material-2', 
+          name: 'Bodenfliesen grau', 
+          unit: 'm²', 
+          packageSize: 1.5, 
+          calculationType: 'area', 
+          consumption: 1.05, 
+          consumptionUnit: 'm²/m²', 
+          company_id: currentCompany.id, 
+          created_at: new Date().toISOString() 
+        },
+        { 
+          id: 'material-3', 
+          name: 'Laminat Eiche', 
+          unit: 'm²', 
+          packageSize: 2.5, 
+          calculationType: 'area', 
+          consumption: 1.1, 
+          consumptionUnit: 'm²/m²', 
+          company_id: currentCompany.id, 
+          created_at: new Date().toISOString() 
+        }
+      ];
+      
+      // Default employees
+      const defaultEmployees = [
+        { 
+          id: 'employee-1', 
+          name: 'Max Mustermann', 
+          role: 'Maler', 
+          email: 'max@example.com', 
+          phone: '+49 123 456789', 
+          company_id: currentCompany.id, 
+          created_at: new Date().toISOString() 
+        },
+        { 
+          id: 'employee-2', 
+          name: 'Anna Schmidt', 
+          role: 'Fliesenleger', 
+          email: 'anna@example.com', 
+          phone: '+49 987 654321', 
+          company_id: currentCompany.id, 
+          created_at: new Date().toISOString() 
+        }
+      ];
+      
+      setTrades(defaultTrades);
+      setUnits(defaultUnits);
+      setRooms(defaultRooms);
+      setFloors(defaultFloors);
+      setMaterials(defaultMaterials);
+      setEmployees(defaultEmployees);
+    }
+  }, [currentUser, currentCompany]);
 
-    if (savedTrades) setTrades(JSON.parse(savedTrades));
-    if (savedUnits) setUnits(JSON.parse(savedUnits));
-    if (savedRooms) setRooms(JSON.parse(savedRooms));
-    if (savedFloors) setFloors(JSON.parse(savedFloors));
-    if (savedMaterials) setMaterials(JSON.parse(savedMaterials));
-    if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('meister-trades', JSON.stringify(trades));
-  }, [trades]);
-
-  useEffect(() => {
-    localStorage.setItem('meister-units', JSON.stringify(units));
-  }, [units]);
-
-  useEffect(() => {
-    localStorage.setItem('meister-rooms', JSON.stringify(rooms));
-  }, [rooms]);
-
-  useEffect(() => {
-    localStorage.setItem('meister-floors', JSON.stringify(floors));
-  }, [floors]);
-
-  useEffect(() => {
-    localStorage.setItem('meister-materials', JSON.stringify(materials));
-  }, [materials]);
-
-  useEffect(() => {
-    localStorage.setItem('meister-employees', JSON.stringify(employees));
-  }, [employees]);
-
-  // Trade functions
-  const addTrade = (trade) => {
-    setTrades(prev => [...prev, { ...trade, id: Date.now().toString() }]);
+  // Generic CRUD operations for all entity types
+  const createEntity = (collection, setCollection, entity) => {
+    const newEntity = {
+      id: `${collection}-${Date.now()}`,
+      ...entity,
+      company_id: currentCompany.id,
+      created_at: new Date().toISOString()
+    };
+    
+    setCollection(prev => [newEntity, ...prev]);
+    return newEntity;
+  };
+  
+  const updateEntity = (collection, setCollection, id, updates) => {
+    setCollection(prev => 
+      prev.map(item => item.id === id ? { ...item, ...updates } : item)
+    );
+  };
+  
+  const deleteEntity = (collection, setCollection, id) => {
+    setCollection(prev => prev.filter(item => item.id !== id));
   };
 
-  const updateTrade = (id, updates) => {
-    setTrades(prev => prev.map(trade => 
-      trade.id === id ? { ...trade, ...updates } : trade
-    ));
-  };
+  // Trades operations
+  const addTrade = (trade) => createEntity('trade', setTrades, trade);
+  const updateTrade = (id, updates) => updateEntity('trade', setTrades, id, updates);
+  const deleteTrade = (id) => deleteEntity('trade', setTrades, id);
 
-  const deleteTrade = (id) => {
-    setTrades(prev => prev.filter(trade => trade.id !== id));
-  };
+  // Units operations
+  const addUnit = (unit) => createEntity('unit', setUnits, unit);
+  const updateUnit = (id, updates) => updateEntity('unit', setUnits, id, updates);
+  const deleteUnit = (id) => deleteEntity('unit', setUnits, id);
 
-  // Unit functions
-  const addUnit = (unit) => {
-    setUnits(prev => [...prev, { ...unit, id: Date.now().toString() }]);
-  };
+  // Rooms operations
+  const addRoom = (room) => createEntity('room', setRooms, room);
+  const updateRoom = (id, updates) => updateEntity('room', setRooms, id, updates);
+  const deleteRoom = (id) => deleteEntity('room', setRooms, id);
 
-  const updateUnit = (id, updates) => {
-    setUnits(prev => prev.map(unit => 
-      unit.id === id ? { ...unit, ...updates } : unit
-    ));
-  };
+  // Floors operations
+  const addFloor = (floor) => createEntity('floor', setFloors, floor);
+  const updateFloor = (id, updates) => updateEntity('floor', setFloors, id, updates);
+  const deleteFloor = (id) => deleteEntity('floor', setFloors, id);
 
-  const deleteUnit = (id) => {
-    setUnits(prev => prev.filter(unit => unit.id !== id));
-  };
+  // Materials operations
+  const addMaterial = (material) => createEntity('material', setMaterials, material);
+  const updateMaterial = (id, updates) => updateEntity('material', setMaterials, id, updates);
+  const deleteMaterial = (id) => deleteEntity('material', setMaterials, id);
 
-  // Room functions
-  const addRoom = (room) => {
-    setRooms(prev => [...prev, { ...room, id: Date.now().toString() }]);
-  };
+  // Employees operations
+  const addEmployee = (employee) => createEntity('employee', setEmployees, employee);
+  const updateEmployee = (id, updates) => updateEntity('employee', setEmployees, id, updates);
+  const deleteEmployee = (id) => deleteEntity('employee', setEmployees, id);
 
-  const updateRoom = (id, updates) => {
-    setRooms(prev => prev.map(room => 
-      room.id === id ? { ...room, ...updates } : room
-    ));
-  };
-
-  const deleteRoom = (id) => {
-    setRooms(prev => prev.filter(room => room.id !== id));
-  };
-
-  // Floor functions
-  const addFloor = (floor) => {
-    setFloors(prev => [...prev, { ...floor, id: Date.now().toString() }]);
-  };
-
-  const updateFloor = (id, updates) => {
-    setFloors(prev => prev.map(floor => 
-      floor.id === id ? { ...floor, ...updates } : floor
-    ));
-  };
-
-  const deleteFloor = (id) => {
-    setFloors(prev => prev.filter(floor => floor.id !== id));
-  };
-
-  // Material functions
-  const addMaterial = (material) => {
-    setMaterials(prev => [...prev, { ...material, id: Date.now().toString() }]);
-  };
-
-  const updateMaterial = (id, updates) => {
-    setMaterials(prev => prev.map(material => 
-      material.id === id ? { ...material, ...updates } : material
-    ));
-  };
-
-  const deleteMaterial = (id) => {
-    setMaterials(prev => prev.filter(material => material.id !== id));
-  };
-
-  // Employee functions
-  const addEmployee = (employee) => {
-    setEmployees(prev => [...prev, { ...employee, id: Date.now().toString() }]);
-  };
-
-  const updateEmployee = (id, updates) => {
-    setEmployees(prev => prev.map(employee => 
-      employee.id === id ? { ...employee, ...updates } : employee
-    ));
-  };
-
-  const deleteEmployee = (id) => {
-    setEmployees(prev => prev.filter(employee => employee.id !== id));
-  };
-
+  // Helper function to get materials for a specific trade
   const getMaterialsForTrade = (trade, unit) => {
+    const tradeUnit = unit || trades.find(t => t.name === trade)?.unit;
     return materials.filter(material => {
-      const tradeUnit = unit || trades.find(t => t.name === trade)?.unit;
       return material.consumptionUnit?.includes(tradeUnit);
     });
   };
@@ -249,7 +213,8 @@ export const SettingsProvider = ({ children }) => {
     addEmployee,
     updateEmployee,
     deleteEmployee,
-    getMaterialsForTrade
+    getMaterialsForTrade,
+    loadAllSettings: () => {} // Dummy function for compatibility
   };
 
   return (

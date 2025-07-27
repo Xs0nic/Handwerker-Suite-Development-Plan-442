@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import SettingsTab from '../settings/SettingsTab';
 import TradesSettings from '../settings/TradesSettings';
 import UnitsSettings from '../settings/UnitsSettings';
@@ -8,13 +9,16 @@ import RoomsSettings from '../settings/RoomsSettings';
 import FloorsSettings from '../settings/FloorsSettings';
 import MaterialsSettings from '../settings/MaterialsSettings';
 import EmployeesSettings from '../settings/EmployeesSettings';
+import RoleManagement from '../admin/RoleManagement';
+import PermissionMatrix from '../admin/PermissionMatrix';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiBriefcase, FiHash, FiHome, FiLayers, FiPackage, FiUsers } = FiIcons;
+const { FiBriefcase, FiHash, FiHome, FiLayers, FiPackage, FiUsers, FiShield, FiGrid } = FiIcons;
 
 const SettingsModule = () => {
   const [activeTab, setActiveTab] = useState('trades');
+  const { hasPermission, currentUser } = useAuth();
 
   const tabs = [
     { id: 'trades', label: 'Gewerke', icon: FiBriefcase },
@@ -24,6 +28,14 @@ const SettingsModule = () => {
     { id: 'materials', label: 'Materialien', icon: FiPackage },
     { id: 'employees', label: 'Mitarbeiter', icon: FiUsers }
   ];
+
+  // Administratoren-spezifische Tabs
+  if (hasPermission('roles', 'view') && currentUser?.role?.id === 'administrator') {
+    tabs.push(
+      { id: 'roles', label: 'Rollen', icon: FiShield },
+      { id: 'permissions', label: 'Berechtigungen', icon: FiGrid }
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -39,6 +51,10 @@ const SettingsModule = () => {
         return <MaterialsSettings />;
       case 'employees':
         return <EmployeesSettings />;
+      case 'roles':
+        return <RoleManagement />;
+      case 'permissions':
+        return <PermissionMatrix />;
       default:
         return <TradesSettings />;
     }
@@ -48,7 +64,9 @@ const SettingsModule = () => {
     <div className="max-w-6xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
-        <p className="text-gray-600 mt-1">Konfigurieren Sie Ihre Vorlagen, Materialien und Mitarbeiter</p>
+        <p className="text-gray-600 mt-1">
+          Konfigurieren Sie Ihre Vorlagen, Materialien, Mitarbeiter und Berechtigungen
+        </p>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

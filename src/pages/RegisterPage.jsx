@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import SafeIcon from '../common/SafeIcon';
+import supabase from '../lib/supabase';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiUser, FiLock, FiMail, FiBriefcase, FiUserPlus, FiAlertCircle } = FiIcons;
+const { FiUser, FiLock, FiMail, FiBriefcase, FiUserPlus, FiAlertCircle, FiCheckCircle } = FiIcons;
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -18,8 +19,8 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  
-  const { register } = useAuth();
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -76,36 +77,166 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    
     if (step === 1) {
       handleNextStep();
       return;
     }
-
+    
     if (!validateStep2()) {
       return;
     }
 
     setLoading(true);
-
+    
     try {
-      await register(
-        formData.email,
-        formData.password,
-        formData.name,
-        formData.companyName
-      );
-      navigate('/projects');
+      console.log('Starting registration process...');
+      
+      // Registrierung mit E-Mail-Bestätigung deaktiviert für Demo
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            company_name: formData.companyName
+          },
+          // E-Mail-Bestätigung für Demo deaktivieren
+          emailRedirectTo: undefined
+        }
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        
+        // Spezifische Fehlermeldungen
+        if (authError.message?.includes('User already registered')) {
+          setError('Diese E-Mail-Adresse ist bereits registriert. Bitte verwenden Sie eine andere oder melden Sie sich an.');
+        } else if (authError.message?.includes('Invalid email')) {
+          setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
+        } else if (authError.message?.includes('Password should be at least')) {
+          setError('Das Passwort muss mindestens 6 Zeichen lang sein.');
+        } else {
+          setError('Bei der Registrierung ist ein Fehler aufgetreten: ' + authError.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      console.log('Registration successful:', authData);
+
+      // Für Demo-Zwecke: Direkt zur Projektliste weiterleiten ohne E-Mail-Bestätigung
+      if (authData.user && authData.session) {
+        console.log('User registered and logged in immediately');
+        
+        // Für Demo-Zwecke: Direkt einloggen mit den gerade eingegebenen Daten
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        });
+        
+        if (signInError) {
+          console.error('Auto-login error:', signInError);
+          setError('Registrierung erfolgreich, aber automatischer Login fehlgeschlagen. Bitte melden Sie sich manuell an.');
+          setRegistrationComplete(true);
+          setNeedsEmailConfirmation(false);
+          setLoading(false);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigate('/projects');
+        }, 2000);
+        setRegistrationComplete(true);
+        setNeedsEmailConfirmation(false);
+      } else {
+        // Falls doch E-Mail-Bestätigung erforderlich
+        console.log('Email confirmation required');
+        setRegistrationComplete(true);
+        setNeedsEmailConfirmation(true);
+      }
+
     } catch (error) {
-      setError(error.message);
+      console.error('Registration error:', error);
+      setError('Bei der Registrierung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (registrationComplete) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white rounded-lg shadow-lg p-8"
+        >
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-green-100">
+              <SafeIcon icon={FiCheckCircle} className="w-10 h-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {needsEmailConfirmation ? 'Registrierung erfolgreich!' : 'Willkommen!'}
+            </h2>
+            <p className="text-gray-600">
+              {needsEmailConfirmation ? (
+                <>
+                  Wir haben Ihnen eine Bestätigungs-E-Mail an <strong>{formData.email}</strong> gesendet.
+                </>
+              ) : (
+                <>
+                  Ihre Registrierung war erfolgreich. Sie werden automatisch weitergeleitet.
+                </>
+              )}
+            </p>
+          </div>
+
+          {needsEmailConfirmation ? (
+            <>
+              <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <div className="flex items-start">
+                  <SafeIcon icon={FiMail} className="h-5 w-5 text-blue-400 mr-2 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800 mb-1">Nächste Schritte:</p>
+                    <ol className="text-sm text-blue-700 space-y-1">
+                      <li>1. Prüfen Sie Ihr E-Mail-Postfach</li>
+                      <li>2. Klicken Sie auf den Bestätigungslink</li>
+                      <li>3. Loggen Sie sich ein und legen Sie los!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+                <p className="text-sm text-yellow-700">
+                  <strong>Hinweis:</strong> Der Bestätigungslink ist 24 Stunden gültig. Prüfen Sie auch Ihren Spam-Ordner, falls Sie keine E-Mail erhalten.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="bg-green-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-green-700">
+                🎉 Ihre Registrierung ist abgeschlossen! Sie können sofort mit der Nutzung beginnen.
+              </p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <Link
+              to="/login"
+              className="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              {needsEmailConfirmation ? 'Zum Login' : 'Weiter zur Anwendung'}
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-white rounded-lg shadow-lg overflow-hidden"
@@ -119,6 +250,7 @@ const RegisterPage = () => {
             <p className="text-gray-600 mt-1">Erstellen Sie ein Konto für Ihr Unternehmen</p>
           </div>
 
+          {/* Progress Indicator */}
           <div className="mb-8">
             <div className="flex items-center">
               <div className={`flex-1 border-t-2 ${step >= 1 ? 'border-blue-500' : 'border-gray-200'}`}></div>
@@ -138,7 +270,7 @@ const RegisterPage = () => {
           </div>
 
           {error && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="bg-red-50 text-red-700 p-3 rounded-lg mb-6 flex items-center"
@@ -157,7 +289,7 @@ const RegisterPage = () => {
               >
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Name
+                    Name *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -179,7 +311,7 @@ const RegisterPage = () => {
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    E-Mail-Adresse
+                    E-Mail-Adresse *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -201,7 +333,7 @@ const RegisterPage = () => {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Passwort
+                    Passwort *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -226,7 +358,7 @@ const RegisterPage = () => {
 
                 <div>
                   <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 mb-1">
-                    Passwort bestätigen
+                    Passwort bestätigen *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -256,7 +388,7 @@ const RegisterPage = () => {
               >
                 <div>
                   <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Firmenname
+                    Firmenname *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -277,22 +409,22 @@ const RegisterPage = () => {
                 </div>
 
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-2">Ihre Testversion</h3>
+                  <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo-Version</h3>
                   <p className="text-sm text-blue-700 mb-2">
-                    Mit der Registrierung erhalten Sie eine kostenlose 30-Tage-Testversion mit folgenden Funktionen:
+                    In der Demo-Version ist die E-Mail-Bestätigung deaktiviert. Sie können sich sofort anmelden:
                   </p>
                   <ul className="text-sm text-blue-700 space-y-1">
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span>Zugriff auf alle Module (Aufmaß, Kalkulation, Projektplan)</span>
+                      <span>Sofortiger Zugang zu allen Funktionen</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span>Bis zu 3 Benutzerlizenzen</span>
+                      <span>Keine E-Mail-Bestätigung erforderlich</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span>Unbegrenzte Anzahl an Projekten</span>
+                      <span>Vollständige Demo-Funktionalität</span>
                     </li>
                   </ul>
                 </div>
@@ -309,7 +441,7 @@ const RegisterPage = () => {
                   Zurück
                 </button>
               )}
-              
+
               <button
                 type="submit"
                 disabled={loading}
@@ -323,14 +455,14 @@ const RegisterPage = () => {
                 ) : (
                   <SafeIcon icon={step === 1 ? FiUser : FiUserPlus} className="w-4 h-4 mr-2" />
                 )}
-                {step === 1 ? 'Weiter' : 'Registrieren'}
+                {step === 1 ? 'Weiter' : (loading ? 'Registrierung läuft...' : 'Registrieren')}
               </button>
             </div>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Bereits registriert? {' '}
+              Bereits registriert?{' '}
               <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
                 Anmelden
               </Link>

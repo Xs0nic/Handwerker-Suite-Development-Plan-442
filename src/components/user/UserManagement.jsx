@@ -5,28 +5,17 @@ import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
 const { 
-  FiPlus, 
-  FiEdit2, 
-  FiTrash2, 
-  FiX, 
-  FiCheck, 
-  FiUser, 
-  FiMail, 
-  FiClock,
-  FiUserPlus,
-  FiAlertCircle,
-  FiAlertTriangle,
-  FiUserCheck,
-  FiShield
+  FiPlus, FiEdit2, FiTrash2, FiX, FiCheck, FiUser, FiMail, FiClock, 
+  FiUserPlus, FiAlertCircle, FiAlertTriangle, FiUserCheck, FiShield 
 } = FiIcons;
 
 const UserManagement = () => {
-  const { 
-    currentCompany, 
-    getCompanyUsers, 
-    getCompanyInvitations, 
-    inviteUser, 
-    removeUser, 
+  const {
+    currentCompany,
+    getCompanyUsers,
+    getCompanyInvitations,
+    inviteUser,
+    removeUser,
     changeUserRole,
     revokeInvitation,
     getAvailableRoles,
@@ -45,6 +34,8 @@ const UserManagement = () => {
     role: 'employee'
   });
   const [newRole, setNewRole] = useState('');
+
+  const availableRoles = getAvailableRoles();
 
   useEffect(() => {
     if (currentCompany) {
@@ -143,14 +134,10 @@ const UserManagement = () => {
 
   const getRoleBadgeClass = (roleId) => {
     switch (roleId) {
-      case 'administrator':
-        return 'bg-red-100 text-red-800';
-      case 'foreman':
-        return 'bg-blue-100 text-blue-800';
-      case 'employee':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'administrator': return 'bg-red-100 text-red-800';
+      case 'foreman': return 'bg-blue-100 text-blue-800';
+      case 'employee': return 'bg-green-100 text-green-800';
+      default: return 'bg-purple-100 text-purple-800';
     }
   };
 
@@ -168,7 +155,7 @@ const UserManagement = () => {
             </h3>
             <div className="mt-2 text-sm text-yellow-700">
               <p>
-                Sie haben nicht die erforderlichen Berechtigungen, um die Nutzerverwaltung zu verwenden.
+                Sie haben nicht die erforderlichen Berechtigungen, um die Nutzerverwaltung zu verwenden. 
                 Bitte kontaktieren Sie Ihren Administrator.
               </p>
             </div>
@@ -200,7 +187,7 @@ const UserManagement = () => {
 
       {/* Statusmeldungen */}
       {error && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-start"
@@ -214,7 +201,7 @@ const UserManagement = () => {
       )}
 
       {success && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="bg-green-50 text-green-700 p-4 rounded-lg mb-6 flex items-start"
@@ -235,6 +222,7 @@ const UserManagement = () => {
           className="bg-gray-50 rounded-lg p-6 mb-6"
         >
           <h3 className="text-lg font-medium text-gray-900 mb-4">Neuen Mitarbeiter einladen</h3>
+          
           <form onSubmit={handleInviteSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -250,6 +238,7 @@ const UserManagement = () => {
                   placeholder="email@beispiel.de"
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Rolle *
@@ -260,9 +249,12 @@ const UserManagement = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="employee">Mitarbeiter</option>
-                  <option value="foreman">Vorarbeiter</option>
-                  <option value="administrator">Administrator</option>
+                  {availableRoles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                      {role.description && ` - ${role.description}`}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -272,7 +264,7 @@ const UserManagement = () => {
                 <SafeIcon icon={FiMail} className="h-5 w-5 text-blue-400 mr-2" />
                 <div>
                   <p className="text-sm text-blue-700">
-                    Der Eingeladene erhält eine E-Mail mit einem Einladungslink, der 7 Tage gültig ist.
+                    Der Eingeladene erhält eine E-Mail mit einem Einladungslink, der 7 Tage gültig ist. 
                     Nachdem er die Einladung angenommen hat, wird er als Nutzer zu Ihrer Firma hinzugefügt.
                   </p>
                 </div>
@@ -308,6 +300,7 @@ const UserManagement = () => {
           className="bg-gray-50 rounded-lg p-6 mb-6"
         >
           <h3 className="text-lg font-medium text-gray-900 mb-4">Rolle ändern</h3>
+          
           <form onSubmit={handleRoleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="flex items-center space-x-3">
@@ -319,7 +312,7 @@ const UserManagement = () => {
                   <p className="text-sm text-gray-600">{selectedUser.email}</p>
                 </div>
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Neue Rolle *
@@ -330,9 +323,12 @@ const UserManagement = () => {
                   onChange={(e) => setNewRole(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="employee">Mitarbeiter</option>
-                  <option value="foreman">Vorarbeiter</option>
-                  <option value="administrator">Administrator</option>
+                  {availableRoles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                      {role.description && ` - ${role.description}`}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -342,7 +338,7 @@ const UserManagement = () => {
                 <SafeIcon icon={FiAlertTriangle} className="h-5 w-5 text-yellow-400 mr-2" />
                 <div>
                   <p className="text-sm text-yellow-700">
-                    Die Änderung der Rolle ändert die Berechtigungen des Nutzers sofort.
+                    Die Änderung der Rolle ändert die Berechtigungen des Nutzers sofort. 
                     Stellen Sie sicher, dass Sie die richtige Rolle auswählen.
                   </p>
                 </div>
@@ -373,7 +369,6 @@ const UserManagement = () => {
       {/* Aktive Nutzer */}
       <div className="mb-8">
         <h3 className="text-md font-semibold text-gray-900 mb-4">Aktive Nutzer ({users.length})</h3>
-        
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -435,7 +430,6 @@ const UserManagement = () => {
                     </td>
                   </tr>
                 ))}
-                
                 {users.length === 0 && (
                   <tr>
                     <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
@@ -452,7 +446,6 @@ const UserManagement = () => {
       {/* Ausstehende Einladungen */}
       <div>
         <h3 className="text-md font-semibold text-gray-900 mb-4">Ausstehende Einladungen ({pendingInvitations.length})</h3>
-        
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -510,7 +503,6 @@ const UserManagement = () => {
                     </td>
                   </tr>
                 ))}
-                
                 {pendingInvitations.length === 0 && (
                   <tr>
                     <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">

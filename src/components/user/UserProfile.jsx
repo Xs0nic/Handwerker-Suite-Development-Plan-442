@@ -4,21 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { 
-  FiUser, 
-  FiMail, 
-  FiBriefcase, 
-  FiShield,
-  FiEdit2,
-  FiCheck,
-  FiX,
-  FiLock,
-  FiAlertCircle
-} = FiIcons;
+const { FiUser, FiMail, FiBriefcase, FiShield, FiEdit2, FiCheck, FiX, FiLock, FiAlertCircle, FiLogOut } = FiIcons;
 
 const UserProfile = () => {
-  const { currentUser, currentCompany, updateUserProfile } = useAuth();
-  
+  const { currentUser, currentCompany, updateUserProfile, logout } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -57,12 +46,7 @@ const UserProfile = () => {
       );
       setSuccess('Ihr Profil wurde erfolgreich aktualisiert.');
       setEditMode(false);
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
+      setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
     } catch (error) {
       setError(error.message);
     }
@@ -79,29 +63,33 @@ const UserProfile = () => {
     setError('');
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
   const getRoleBadgeClass = (roleId) => {
     switch (roleId) {
-      case 'administrator':
-        return 'bg-red-100 text-red-800';
-      case 'foreman':
-        return 'bg-blue-100 text-blue-800';
-      case 'employee':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'administrator': return 'bg-red-100 text-red-800';
+      case 'foreman': return 'bg-blue-100 text-blue-800';
+      case 'employee': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Mein Profil</h2>
-        <p className="text-gray-600">Verwalten Sie Ihre persönlichen Daten und Passwort</p>
+        <h2 className="text-2xl font-bold text-gray-900">Mein Profil</h2>
+        <p className="text-gray-600 mt-1">Verwalten Sie Ihre persönlichen Daten und Passwort</p>
       </div>
 
       {/* Statusmeldungen */}
       {error && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-start"
@@ -115,7 +103,7 @@ const UserProfile = () => {
       )}
 
       {success && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="bg-green-50 text-green-700 p-4 rounded-lg mb-6 flex items-start"
@@ -141,7 +129,6 @@ const UserProfile = () => {
             </button>
           )}
         </div>
-        
         <div className="p-6">
           {editMode ? (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -158,10 +145,9 @@ const UserProfile = () => {
                   placeholder="Ihr Name"
                 />
               </div>
-              
+
               <div className="pt-4 border-t border-gray-200">
                 <h4 className="text-md font-medium text-gray-900 mb-4">Passwort ändern</h4>
-                
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -176,7 +162,6 @@ const UserProfile = () => {
                       placeholder="••••••••"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Neues Passwort
@@ -192,7 +177,6 @@ const UserProfile = () => {
                       Das Passwort muss mindestens 8 Zeichen lang sein.
                     </p>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Neues Passwort bestätigen
@@ -207,7 +191,7 @@ const UserProfile = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2 pt-4">
                 <button
                   type="button"
@@ -237,7 +221,7 @@ const UserProfile = () => {
                   <p className="text-gray-600">{currentUser?.email}</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Firma</p>
@@ -246,7 +230,6 @@ const UserProfile = () => {
                     <p className="text-gray-900">{currentCompany?.name}</p>
                   </div>
                 </div>
-                
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Rolle</p>
                   <div className="flex items-center space-x-2">
@@ -256,7 +239,6 @@ const UserProfile = () => {
                     </span>
                   </div>
                 </div>
-                
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">E-Mail</p>
                   <div className="flex items-center space-x-2">
@@ -264,7 +246,6 @@ const UserProfile = () => {
                     <p className="text-gray-900">{currentUser?.email}</p>
                   </div>
                 </div>
-                
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Passwort</p>
                   <div className="flex items-center space-x-2">
@@ -272,6 +253,17 @@ const UserProfile = () => {
                     <p className="text-gray-900">••••••••</p>
                   </div>
                 </div>
+              </div>
+              
+              {/* Logout-Button */}
+              <div className="pt-6 mt-6 border-t border-gray-200">
+                <button 
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                >
+                  <SafeIcon icon={FiLogOut} className="w-4 h-4" />
+                  <span>Abmelden</span>
+                </button>
               </div>
             </div>
           )}

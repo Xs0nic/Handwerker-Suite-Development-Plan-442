@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useProjects } from '../../contexts/ProjectContext';
 import ProjectForm from './ProjectForm';
+import GlobalChat from '../chat/GlobalChat';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiPlus, FiFolder, FiCalendar, FiMapPin, FiMoreVertical, FiEdit2, FiTrash2 } = FiIcons;
+const { FiPlus, FiFolder, FiCalendar, FiMapPin, FiMoreVertical, FiEdit2, FiTrash2, FiMessageSquare } = FiIcons;
 
 const ProjectList = () => {
   const { projects, deleteProject } = useProjects();
   const [showForm, setShowForm] = useState(false);
   const [editProject, setEditProject] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [showGlobalChat, setShowGlobalChat] = useState(false);
 
   const handleEdit = (project) => {
     setEditProject(project);
@@ -38,14 +40,22 @@ const ProjectList = () => {
           <h1 className="text-2xl font-bold text-gray-900">Projekte</h1>
           <p className="text-gray-600 mt-1">Verwalten Sie Ihre Handwerksprojekte</p>
         </div>
-        
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-        >
-          <SafeIcon icon={FiPlus} className="w-4 h-4" />
-          <span>Neues Projekt</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowGlobalChat(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+          >
+            <SafeIcon icon={FiMessageSquare} className="w-4 h-4" />
+            <span>Firmen-Chat</span>
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <SafeIcon icon={FiPlus} className="w-4 h-4" />
+            <span>Neues Projekt</span>
+          </button>
+        </div>
       </div>
 
       {projects.length === 0 ? (
@@ -53,12 +63,21 @@ const ProjectList = () => {
           <SafeIcon icon={FiFolder} className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Keine Projekte vorhanden</h3>
           <p className="text-gray-600 mb-4">Erstellen Sie Ihr erstes Projekt, um zu beginnen.</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Projekt erstellen
-          </button>
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-3">
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Projekt erstellen
+            </button>
+            <button
+              onClick={() => setShowGlobalChat(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+            >
+              <SafeIcon icon={FiMessageSquare} className="w-4 h-4" />
+              <span>Zum Firmen-Chat</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -75,7 +94,6 @@ const ProjectList = () => {
                   <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                     {project.name}
                   </h3>
-                  
                   <div className="relative">
                     <button
                       onClick={() => setDropdownOpen(dropdownOpen === project.id ? null : project.id)}
@@ -83,7 +101,6 @@ const ProjectList = () => {
                     >
                       <SafeIcon icon={FiMoreVertical} className="w-4 h-4 text-gray-500" />
                     </button>
-                    
                     {dropdownOpen === project.id && (
                       <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <button
@@ -104,7 +121,6 @@ const ProjectList = () => {
                     )}
                   </div>
                 </div>
-
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <SafeIcon icon={FiMapPin} className="w-4 h-4" />
@@ -115,13 +131,11 @@ const ProjectList = () => {
                     <span>Erstellt: {formatDate(project.createdAt)}</span>
                   </div>
                 </div>
-
                 {project.description && (
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                     {project.description}
                   </p>
                 )}
-
                 <Link
                   to={`/project/${project.id}`}
                   className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -143,6 +157,9 @@ const ProjectList = () => {
           }}
         />
       )}
+
+      {/* Global Chat Component */}
+      <GlobalChat isOpen={showGlobalChat} onClose={() => setShowGlobalChat(false)} />
     </div>
   );
 };

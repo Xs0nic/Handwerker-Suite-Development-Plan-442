@@ -3,37 +3,42 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useProjects } from '../../contexts/ProjectContext';
 import { useChat } from '../../contexts/ChatContext';
+import { useFileStorage } from '../../contexts/FileStorageContext';
+import { useAuth } from '../../contexts/AuthContext';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { 
-  FiClipboard, 
-  FiCalculator, 
-  FiFileText, 
-  FiCamera, 
-  FiCheckSquare, 
-  FiPlus, 
-  FiEdit2, 
-  FiTrash2,
-  FiMessageSquare,
-  FiUsers,
-  FiCalendar
-} = FiIcons;
+const { FiClipboard, FiCalculator, FiFileText, FiCamera, FiCheckSquare, FiPlus, FiEdit2, FiTrash2, FiMessageSquare, FiUsers, FiCalendar, FiFolder, FiFile, FiImage, FiArchive, FiDownload } = FiIcons;
 
 const ProjectCockpit = () => {
   const { id } = useParams();
   const { projects, updateProject } = useProjects();
   const { getLastMessage, getUnreadCount } = useChat();
+  const { getFolders, getFiles } = useFileStorage();
+  const { hasPermission } = useAuth();
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [showAddTask, setShowAddTask] = useState(false);
+  const [recentFiles, setRecentFiles] = useState([]);
+  const [folderCount, setFolderCount] = useState(0);
 
   useEffect(() => {
     const currentProject = projects.find(p => p.id === id);
     setProject(currentProject);
     setTasks(currentProject?.tasks || []);
-  }, [projects, id]);
+    
+    // Load file storage data
+    if (currentProject) {
+      const folders = getFolders(id);
+      const files = getFiles(id);
+      setFolderCount(folders.length);
+      
+      // Get recent files (last 5)
+      const sortedFiles = files.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+      setRecentFiles(sortedFiles.slice(0, 5));
+    }
+  }, [projects, id, getFolders, getFiles]);
 
   const addTask = () => {
     if (newTask.trim()) {
@@ -52,7 +57,7 @@ const ProjectCockpit = () => {
   };
 
   const toggleTask = (taskId) => {
-    const updatedTasks = tasks.map(task => 
+    const updatedTasks = tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     );
     setTasks(updatedTasks);
@@ -63,6 +68,29 @@ const ProjectCockpit = () => {
     const updatedTasks = tasks.filter(task => task.id !== taskId);
     setTasks(updatedTasks);
     updateProject(id, { tasks: updatedTasks });
+  };
+
+  const getFileIcon = (fileType) => {
+    if (fileType.startsWith('image/')) return FiImage;
+    if (fileType.includes('pdf')) return FiFileText;
+    if (fileType.includes('zip') || fileType.includes('rar')) return FiArchive;
+    return FiFile;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   if (!project) {
@@ -107,6 +135,13 @@ const ProjectCockpit = () => {
       path: `/project/${id}/chat`,
       color: 'orange',
       badge: getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`))
+    },
+    {
+      title: 'Dateiablage',
+      description: 'Dokumente und Bilder verwalten',
+      icon: FiFolder,
+      path: `/project/${id}/files`,
+      color: 'indigo'
     }
   ];
 
@@ -137,7 +172,7 @@ const ProjectCockpit = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6 mb-6">
         {modules.map((module, index) => (
           <motion.div
             key={module.title}
@@ -156,7 +191,6 @@ const ProjectCockpit = () => {
                   </span>
                 </div>
               )}
-              
               <div className="flex flex-col items-center text-center space-y-3">
                 <div className={`w-12 h-12 bg-${module.color}-100 rounded-lg flex items-center justify-center group-hover:bg-${module.color}-200 transition-colors`}>
                   <SafeIcon icon={module.icon} className={`w-6 h-6 text-${module.color}-600`} />
@@ -264,14 +298,10 @@ const ProjectCockpit = () => {
               <SafeIcon icon={FiCalendar} className="w-5 h-5" />
               <span>Anstehende Termine</span>
             </h2>
-            <Link
-              to={`/project/${id}/plan`}
-              className="text-blue-600 hover:text-blue-700 text-sm"
-            >
+            <Link to={`/project/${id}/plan`} className="text-blue-600 hover:text-blue-700 text-sm">
               Alle Termine
             </Link>
           </div>
-          
           <div className="space-y-3">
             {upcomingTasks.length > 0 ? (
               upcomingTasks.map((item) => (
@@ -295,10 +325,7 @@ const ProjectCockpit = () => {
               <div className="text-center py-8 text-gray-500">
                 <SafeIcon icon={FiCalendar} className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                 <p>Keine anstehenden Termine</p>
-                <Link
-                  to={`/project/${id}/plan`}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
-                >
+                <Link to={`/project/${id}/plan`} className="text-blue-600 hover:text-blue-700 text-sm">
                   Termine planen
                 </Link>
               </div>
@@ -306,58 +333,132 @@ const ProjectCockpit = () => {
           </div>
         </div>
 
-        {/* Chat Preview */}
+        {/* File Storage Preview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-              <SafeIcon icon={FiMessageSquare} className="w-5 h-5" />
-              <span>Team-Chat</span>
+              <SafeIcon icon={FiFolder} className="w-5 h-5" />
+              <span>Dateiablage</span>
             </h2>
-            <Link
-              to={`/project/${id}/chat`}
-              className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1"
-            >
-              <span>Zum Chat</span>
-              {getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`)) > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`)) > 9 
-                    ? '9+' 
-                    : getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`))}
-                </span>
-              )}
+            <Link to={`/project/${id}/files`} className="text-blue-600 hover:text-blue-700 text-sm">
+              Alle Dateien
             </Link>
           </div>
           
-          <div className="space-y-3">
-            {lastMessage ? (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <SafeIcon icon={FiUsers} className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">{lastMessage.sender}</span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(lastMessage.timestamp).toLocaleTimeString('de-DE', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-900 line-clamp-2">{lastMessage.text}</p>
+          {/* Storage Stats */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <SafeIcon icon={FiFolder} className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-700">Ordner</span>
               </div>
+              <p className="text-lg font-semibold text-blue-900">{folderCount}</p>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <SafeIcon icon={FiFile} className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-700">Dateien</span>
+              </div>
+              <p className="text-lg font-semibold text-green-900">{recentFiles.length}</p>
+            </div>
+          </div>
+
+          {/* Recent Files */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-700">Neueste Dateien</h4>
+            {recentFiles.length > 0 ? (
+              recentFiles.map((file) => (
+                <div key={file.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg group">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <SafeIcon icon={getFileIcon(file.file_type)} className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.original_name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(file.file_size)} • {formatDate(file.uploaded_at)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => window.open(file.file_path, '_blank')}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-colors"
+                    title="Herunterladen"
+                  >
+                    <SafeIcon icon={FiDownload} className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+              ))
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <SafeIcon icon={FiMessageSquare} className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                <p>Noch keine Nachrichten</p>
-                <p className="text-sm">Starten Sie die Team-Kommunikation</p>
+                <SafeIcon icon={FiFolder} className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">Keine Dateien vorhanden</p>
+                {hasPermission('files', 'create') && (
+                  <Link to={`/project/${id}/files`} className="text-blue-600 hover:text-blue-700 text-sm">
+                    Dateien hochladen
+                  </Link>
+                )}
               </div>
             )}
-            
-            <Link
-              to={`/project/${id}/chat`}
-              className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Chat öffnen
-            </Link>
           </div>
+
+          {/* Quick Actions */}
+          {hasPermission('files', 'create') && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <Link
+                to={`/project/${id}/files`}
+                className="w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <SafeIcon icon={FiFolder} className="w-4 h-4" />
+                <span>Dateiablage öffnen</span>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Preview - moved to bottom for better layout */}
+      <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+            <SafeIcon icon={FiMessageSquare} className="w-5 h-5" />
+            <span>Team-Chat</span>
+          </h2>
+          <Link to={`/project/${id}/chat`} className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1">
+            <span>Zum Chat</span>
+            {getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`)) > 0 && (
+              <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                {getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`)) > 9 ? '9+' : getUnreadCount(id, localStorage.getItem(`meister-chat-lastread-${id}`))}
+              </span>
+            )}
+          </Link>
+        </div>
+        <div className="space-y-3">
+          {lastMessage ? (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <SafeIcon icon={FiUsers} className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">{lastMessage.sender}</span>
+                <span className="text-xs text-gray-500">
+                  {new Date(lastMessage.timestamp).toLocaleTimeString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              <p className="text-sm text-gray-900 line-clamp-2">{lastMessage.text}</p>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <SafeIcon icon={FiMessageSquare} className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+              <p>Noch keine Nachrichten</p>
+              <p className="text-sm">Starten Sie die Team-Kommunikation</p>
+            </div>
+          )}
+          <Link
+            to={`/project/${id}/chat`}
+            className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Chat öffnen
+          </Link>
         </div>
       </div>
     </div>

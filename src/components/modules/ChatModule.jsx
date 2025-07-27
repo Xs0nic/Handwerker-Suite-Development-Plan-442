@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../../contexts/ProjectContext';
 import { useChat } from '../../contexts/ChatContext';
+import { useAuth } from '../../contexts/AuthContext';
 import SafeIcon from '../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
@@ -11,24 +12,14 @@ const { FiArrowLeft, FiSend, FiPaperclip, FiMoreVertical, FiEdit2, FiTrash2, FiU
 const ChatModule = () => {
   const { id } = useParams();
   const { projects } = useProjects();
-  const { 
-    getProjectMessages, 
-    sendMessage, 
-    deleteMessage, 
-    editMessage,
-    currentUser,
-    setCurrentUser 
-  } = useChat();
-  
+  const { currentUser } = useAuth();
+  const { getProjectMessages, sendMessage, deleteMessage, editMessage, setCurrentUser } = useChat();
   const [project, setProject] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [userName, setUserName] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(null);
-  
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -37,14 +28,12 @@ const ChatModule = () => {
     setProject(currentProject);
     setMessages(getProjectMessages(id));
     
-    // Check if user name is set
-    const savedUser = localStorage.getItem('meister-chat-user');
-    if (savedUser) {
-      setCurrentUser(savedUser);
-    } else {
-      setShowUserModal(true);
+    // Automatically set the chat username to the current user's name
+    if (currentUser?.name) {
+      setCurrentUser(currentUser.name);
     }
-  }, [projects, id, getProjectMessages, setCurrentUser]);
+    
+  }, [projects, id, getProjectMessages, setCurrentUser, currentUser]);
 
   useEffect(() => {
     scrollToBottom();
@@ -56,24 +45,14 @@ const ChatModule = () => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (newMessage.trim() && currentUser) {
+    if (newMessage.trim() && currentUser?.name) {
       sendMessage(id, {
         text: newMessage.trim(),
-        sender: currentUser,
+        sender: currentUser.name,
         timestamp: new Date().toISOString()
       });
       setMessages(getProjectMessages(id));
       setNewMessage('');
-    }
-  };
-
-  const handleSetUser = (e) => {
-    e.preventDefault();
-    if (userName.trim()) {
-      setCurrentUser(userName.trim());
-      localStorage.setItem('meister-chat-user', userName.trim());
-      setShowUserModal(false);
-      setUserName('');
     }
   };
 
@@ -104,17 +83,9 @@ const ChatModule = () => {
     const diffInHours = (now - date) / (1000 * 60 * 60);
     
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('de-DE', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
+      return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     } else {
-      return date.toLocaleDateString('de-DE', { 
-        day: '2-digit', 
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
   };
 
@@ -150,10 +121,7 @@ const ChatModule = () => {
       {/* Header */}
       <div className="bg-white rounded-t-lg shadow-sm border border-gray-200 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link
-            to={`/project/${id}`}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <Link to={`/project/${id}`} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <SafeIcon icon={FiArrowLeft} className="w-5 h-5 text-gray-600" />
           </Link>
           <div>
@@ -161,20 +129,10 @@ const ChatModule = () => {
             <p className="text-gray-600">{project.name}</p>
           </div>
         </div>
-        
         <div className="flex items-center space-x-2">
           <div className="text-sm text-gray-600">
-            Angemeldet als: <span className="font-medium">{currentUser}</span>
+            Angemeldet als: <span className="font-medium">{currentUser?.name}</span>
           </div>
-          <button
-            onClick={() => {
-              setShowUserModal(true);
-              setUserName(currentUser);
-            }}
-            className="text-blue-600 hover:text-blue-700 p-1"
-          >
-            <SafeIcon icon={FiUser} className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -191,30 +149,21 @@ const ChatModule = () => {
               {/* Date Separator */}
               <div className="flex items-center justify-center my-4">
                 <div className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-600">
-                  {new Date(date).toLocaleDateString('de-DE', { 
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long'
-                  })}
+                  {new Date(date).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </div>
               </div>
-              
+
               {/* Messages for this date */}
               {dayMessages.map((message) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${message.sender === currentUser ? 'justify-end' : 'justify-start'} mb-3`}
+                  className={`flex ${message.sender === currentUser?.name ? 'justify-end' : 'justify-start'} mb-3`}
                 >
-                  <div className={`max-w-xs lg:max-w-md group ${
-                    message.sender === currentUser 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-100 text-gray-900'
-                  } rounded-lg px-4 py-2 relative`}>
-                    
+                  <div className={`max-w-xs lg:max-w-md group ${message.sender === currentUser?.name ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-4 py-2 relative`}>
                     {/* Message Options */}
-                    {message.sender === currentUser && (
+                    {message.sender === currentUser?.name && (
                       <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="relative">
                           <button
@@ -223,7 +172,6 @@ const ChatModule = () => {
                           >
                             <SafeIcon icon={FiMoreVertical} className="w-3 h-3" />
                           </button>
-                          
                           {dropdownOpen === message.id && (
                             <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-32">
                               <button
@@ -247,7 +195,7 @@ const ChatModule = () => {
                     )}
 
                     {/* Sender name (for messages from others) */}
-                    {message.sender !== currentUser && (
+                    {message.sender !== currentUser?.name && (
                       <div className="text-xs font-medium text-gray-600 mb-1">
                         {message.sender}
                       </div>
@@ -271,10 +219,7 @@ const ChatModule = () => {
                             Speichern
                           </button>
                           <button
-                            onClick={() => {
-                              setEditingMessage(null);
-                              setEditText('');
-                            }}
+                            onClick={() => { setEditingMessage(null); setEditText(''); }}
                             className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
                           >
                             Abbrechen
@@ -291,9 +236,7 @@ const ChatModule = () => {
                     )}
 
                     {/* Timestamp */}
-                    <div className={`text-xs mt-1 flex items-center space-x-1 ${
-                      message.sender === currentUser ? 'text-blue-100' : 'text-gray-500'
-                    }`}>
+                    <div className={`text-xs mt-1 flex items-center space-x-1 ${message.sender === currentUser?.name ? 'text-blue-100' : 'text-gray-500'}`}>
                       <SafeIcon icon={FiClock} className="w-3 h-3" />
                       <span>{formatTime(message.timestamp)}</span>
                     </div>
@@ -343,45 +286,6 @@ const ChatModule = () => {
           </div>
         </form>
       </div>
-
-      {/* User Modal */}
-      {showUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
-          >
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Benutzername festlegen
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Geben Sie Ihren Namen ein, um am Chat teilzunehmen.
-              </p>
-              <form onSubmit={handleSetUser}>
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Ihr Name..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-                  autoFocus
-                  required
-                />
-                <div className="flex space-x-3">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Chat beitreten
-                  </button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 };

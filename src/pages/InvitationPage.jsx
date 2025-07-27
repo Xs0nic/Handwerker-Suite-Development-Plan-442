@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import supabase from '../lib/supabase';
 
 const { FiUser, FiLock, FiBriefcase, FiUserPlus, FiAlertCircle, FiCheckCircle } = FiIcons;
 
@@ -18,21 +19,34 @@ const InvitationPage = () => {
   const [loading, setLoading] = useState(false);
   const [invitation, setInvitation] = useState(null);
   const [validating, setValidating] = useState(true);
-  
-  const { acceptInvitation, invitations } = useAuth();
+  const { acceptInvitation } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Finde die Einladung anhand des Tokens
-    const inv = invitations?.find(i => i.token === token && !i.accepted);
-    
-    if (inv) {
-      setInvitation(inv);
-    } else {
-      setError('Ungültige oder abgelaufene Einladung');
-    }
-    setValidating(false);
-  }, [token, invitations]);
+    const validateInvitation = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('invitations_ms2024')
+          .select('*')
+          .eq('token', token)
+          .eq('accepted', false)
+          .single();
+
+        if (error || !data) {
+          setError('Ungültige oder abgelaufene Einladung');
+        } else if (new Date(data.expires_at) < new Date()) {
+          setError('Diese Einladung ist abgelaufen');
+        } else {
+          setInvitation(data);
+        }
+      } catch (error) {
+        setError('Fehler beim Validieren der Einladung');
+      }
+      setValidating(false);
+    };
+
+    validateInvitation();
+  }, [token]);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -66,7 +80,6 @@ const InvitationPage = () => {
     }
 
     setLoading(true);
-
     try {
       await acceptInvitation(token, formData.name, formData.password);
       navigate('/projects');
@@ -96,7 +109,7 @@ const InvitationPage = () => {
   if (error && !invitation) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center"
@@ -106,7 +119,7 @@ const InvitationPage = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Ungültige Einladung</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Link 
+          <Link
             to="/login"
             className="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
           >
@@ -121,7 +134,7 @@ const InvitationPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-white rounded-lg shadow-lg overflow-hidden"
@@ -132,7 +145,7 @@ const InvitationPage = () => {
               <span className="text-white font-bold text-2xl">MS</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Einladung annehmen</h1>
-            <p className="text-gray-600 mt-1">Sie wurden zu <b>{invitation.companyName}</b> eingeladen</p>
+            <p className="text-gray-600 mt-1">Sie wurden zu <b>{invitation.company_name}</b> eingeladen</p>
           </div>
 
           <div className="bg-green-50 p-4 rounded-lg mb-6">
@@ -141,7 +154,8 @@ const InvitationPage = () => {
               <div>
                 <p className="text-sm text-green-700">
                   <span className="font-medium">Rolle: </span>
-                  {invitation.role.name}
+                  {invitation.role === 'administrator' ? 'Administrator' : 
+                   invitation.role === 'foreman' ? 'Vorarbeiter' : 'Mitarbeiter'}
                 </p>
                 <p className="text-sm text-green-700">
                   <span className="font-medium">E-Mail: </span>
@@ -152,7 +166,7 @@ const InvitationPage = () => {
           </div>
 
           {error && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="bg-red-50 text-red-700 p-3 rounded-lg mb-6 flex items-center"
@@ -251,7 +265,7 @@ const InvitationPage = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Bereits registriert? {' '}
+              Bereits registriert?{' '}
               <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
                 Anmelden
               </Link>
